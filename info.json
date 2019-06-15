@@ -1,0 +1,10 @@
+{
+  "name":"rail-bridge",
+  "author":"DaveMcW",
+  "version":"0.0.1",
+  "title":"Rail Bridges",
+  "homepage":"",
+  "description":"Adds rail bridges that can cross tracks without signals.",
+  "dependencies": ["base"],
+  "factorio_version": "0.17"
+}
