@@ -1,4 +1,4 @@
-function cut_off_bottom(picture, bottom)
+local function cut_off_bottom(picture, bottom)
   picture.scale = picture.scale or 1
   local top = -picture.height / 2
   if top < bottom then
@@ -6,6 +6,7 @@ function cut_off_bottom(picture, bottom)
     picture.shift = util.by_pixel(0, (top + picture.height/2) * picture.scale)
   else
     picture.filename = "__core__/graphics/empty.png"
+    picture.width = 1
     picture.height = 1
   end
 end
@@ -48,29 +49,34 @@ local bridge = {
   selection_box = {{-1.2, -1}, {1.2, 1.6}},
   minable = {mining_time = 0.5, result = "rail-bridge"},
   max_health = 300,
-  resistances = table.deepcopy(rail_north.resistances),
+  resistances = table.deepcopy(rail_east.resistances),
   corpse = "straight-rail-remnants",
   render_layer = "lower-object",
   picture = {layers = {}},
 }
-for _, layer in pairs{"stone_path", "ties", "backplates", "metals"} do
+for _, layer in pairs{"stone_path_background", "stone_path", "ties"} do
+  table.insert(bridge.picture.layers, table.deepcopy(rail_north.pictures.straight_rail_vertical[layer]))
   table.insert(bridge.picture.layers, table.deepcopy(rail_east.pictures.straight_rail_horizontal[layer]))
 end
 table.insert(bridge.picture.layers, {
   filename = "__rail-bridge__/graphics/bridge.png",
   priority = "extra-high",
   width = 72,
-  height = 30,
+  height = 32,
   shift = util.by_pixel(0, 34),
   hr_version = {
     filename = "__rail-bridge__/graphics/hr-bridge.png",
     priority = "extra-high",
     width = 144,
-    height = 60,
+    height = 64,
     shift = util.by_pixel(0, 34),
     scale = 0.5,
   }
 })
+for _, layer in pairs{"backplates", "metals"} do
+  table.insert(bridge.picture.layers, table.deepcopy(rail_north.pictures.straight_rail_vertical[layer]))
+  table.insert(bridge.picture.layers, table.deepcopy(rail_east.pictures.straight_rail_horizontal[layer]))
+end
 data:extend{bridge}
 
 -- Bridge item
@@ -92,6 +98,8 @@ local recipe = {
   type = "recipe",
   name = "rail-bridge",
   result = "rail-bridge",
+  enabled = false,
+  energy_required = 10,
   ingredients = {
     {"concrete", 100},
     {"steel-plate", 20},
