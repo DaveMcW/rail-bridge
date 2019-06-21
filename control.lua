@@ -32,7 +32,6 @@ function on_built(event)
   local mod_x = 0
   local mod_y = 0
   if entity.name == "rail-bridge-diagonal-left" or entity.name == "rail-bridge-diagonal-right" then
-    entity.get_or_create_control_behavior().enabled = false
     if entity.direction % 4 == defines.direction.north then
       mod_x = 0
       mod_y = 1
@@ -77,6 +76,11 @@ function on_built(event)
     end
   end
 
+  -- Turn off constant combinator
+  if entity.type == "constant-combinator" then
+     entity.get_or_create_control_behavior().enabled = false
+   end
+
   -- Create crossing rails
   if entity.name == "rail-bridge" then
     create_rail("rail-bridge-north", entity, defines.direction.north)
@@ -113,14 +117,16 @@ end
 function on_destroyed(event)
   local entity = event.entity
   if not entity or not entity.valid then return end
-  if MY_BRIDGES[entity.name] then
-    -- Remove rails
-    for _, rail in pairs(entity.surface.find_entities_filtered {
-      type = "straight-rail",
-      area = area_under(entity),
-      force = entity.force,
-    }) do
-      rail.destroy{raise_destroy = true}
+  if not MY_BRIDGES[entity.name] then return end
+
+  -- Remove crossing rails
+  for _, rail in pairs(entity.surface.find_entities_filtered {
+    type = "straight-rail",
+    area = area_under(entity),
+    force = entity.force,
+  }) do
+    if MY_RAILS[rail.name] then
+      rail.destroy()
     end
   end
 end
@@ -202,12 +208,9 @@ function refund_entity(entity, build_event, colliding_entity)
       entity.surface.spill_item_stack(entity.position, {name=item_name, count=item_count, health=health}, false, entity.force, false)
     end
   end
+
   -- Destroy entity
-  if MY_BRIDGES[entity.name] then
-    entity.destroy()
-  else
-    entity.destroy{raise_destroy = true}
-  end
+  entity.destroy{raise_destroy = true}
 end
 
 script.on_init(on_init)
