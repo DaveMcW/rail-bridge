@@ -1,4 +1,5 @@
 local MY_BRIDGES = {
+  ["rail-bridge-test"] = true,
   ["rail-bridge"] = true,
   ["rail-bridge-diagonal-left"] = true,
   ["rail-bridge-diagonal-right"] = true,
@@ -76,11 +77,6 @@ function on_built(event)
     end
   end
 
-  -- Turn off constant combinator
-  if entity.type == "constant-combinator" then
-     entity.get_or_create_control_behavior().enabled = false
-   end
-
   -- Create crossing rails
   if entity.name == "rail-bridge" then
     create_rail("rail-bridge-north", entity, defines.direction.north)
@@ -91,7 +87,7 @@ function on_built(event)
       create_rail("rail-bridge-rail-1", entity, defines.direction.north, {0, -1})
       create_rail("rail-bridge-rail-2", entity, defines.direction.north, {0, 1})
       create_rail("rail-bridge-rail-1", entity, defines.direction.southwest, {0, -1})
-      create_rail("rail-bridge-rail-1", entity, defines.direction.northeast, {0, 1})
+      create_rail("rail-bridge-rail-2", entity, defines.direction.northeast, {0, 1})
     else
       create_rail("rail-bridge-rail-1", entity, defines.direction.east, {-1, 0})
       create_rail("rail-bridge-rail-2", entity, defines.direction.east, {1, 0})
@@ -104,12 +100,12 @@ function on_built(event)
       create_rail("rail-bridge-rail-3", entity, defines.direction.north, {0, -1})
       create_rail("rail-bridge-rail-4", entity, defines.direction.north, {0, 1})
       create_rail("rail-bridge-rail-3", entity, defines.direction.southeast, {0, -1})
-      create_rail("rail-bridge-rail-3", entity, defines.direction.northwest, {0, 1})
+      create_rail("rail-bridge-rail-4", entity, defines.direction.northwest, {0, 1})
     else
       create_rail("rail-bridge-rail-4", entity, defines.direction.east, {-1, 0})
       create_rail("rail-bridge-rail-3", entity, defines.direction.east, {1, 0})
-      create_rail("rail-bridge-rail-4", entity, defines.direction.northeast, {-1, 0})
-      create_rail("rail-bridge-rail-3", entity, defines.direction.southwest, {1, 0})
+      create_rail("rail-bridge-rail-3", entity, defines.direction.northeast, {-1, 0})
+      create_rail("rail-bridge-rail-4", entity, defines.direction.southwest, {1, 0})
     end
   end
 end
@@ -132,8 +128,10 @@ function on_destroyed(event)
 end
 
 function on_gui_opened(event)
-  -- Disable combinator gui
-  if event.entity and MY_BRIDGES[event.entity.name] then
+  -- Disable bridge gui
+  local entity = event.entity
+  if not entity or not entity.valid then return end
+  if MY_BRIDGES[event.entity.name] then
     game.players[event.player_index].opened = nil
   end
 end
@@ -225,19 +223,3 @@ script.on_event(defines.events.on_robot_mined_entity, on_destroyed)
 script.on_event(defines.events.on_entity_died, on_destroyed)
 script.on_event(defines.events.script_raised_destroy, on_destroyed)
 script.on_event(defines.events.on_gui_opened, on_gui_opened)
-
-function circle(entity, color, time, filled)
-  if not entity then return end
-  if not color then color = {g=1} end
-  if not time then time = 60 end
-  rendering.draw_circle{
-    surface = entity.surface,
-    target = entity,
-    forces = {entity.force},
-    color = color,
-    radius = 1,
-    width = 5,
-    filled = filled,
-    time_to_live = time,
-  }
-end

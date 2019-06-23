@@ -25,6 +25,38 @@ local function copy_and_shift(source, shift)
   picture.shift[2] = picture.shift[2] + shift[2]
   picture.hr_version.shift[1] = picture.hr_version.shift[1] + shift[1]
   picture.hr_version.shift[2] = picture.hr_version.shift[2] + shift[2]
+  picture.flags = {"low-object"}
+  picture.hr_version.flags = {"low-object"}
+  return picture
+end
+
+local function load_vertical_picture(picture, layer, num)
+    picture[layer] = {
+      filename = "__rail-bridge__/graphics/vertical_"..layer..".png",
+      x = (num - 1) * 128,
+      width = 128,
+      height = 64,
+      variation_count = 1,
+      priority = "extra-high",
+      flags = {"low-object"},
+      hr_version = {
+        filename = "__rail-bridge__/graphics/hr_vertical_"..layer..".png",
+        x = (num - 1) * 256,
+        width = 256,
+        height = 128,
+        variation_count = 1,
+        priority = "extra-high",
+        flags = {"low-object"},
+        scale = 0.5
+      }
+    }
+end
+
+local function trim_4_to_2_tile_width(picture)
+  picture.width = 64
+  picture.hr_version.width = 128
+  picture.x = picture.x + 32
+  picture.hr_version.x = picture.hr_version.x + 64
   return picture
 end
 
@@ -46,13 +78,6 @@ for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates
   cut_off_bottom(rail_north.pictures.straight_rail_vertical[layer], -14)
   cut_off_bottom(rail_north.pictures.straight_rail_vertical[layer].hr_version, -28)
 end
--- Manually edited files with the following changes. Double the dimensions for hr_version.
--- 1. Cut out rectangle at {{0,82}, {128,128}}
--- 2. Cut out rectangle at {{512,0}, {640,54}}
-rail_north.pictures.rail_endings.sheets[1].filename = "__rail-bridge__/graphics/rail-endings-background.png"
-rail_north.pictures.rail_endings.sheets[1].hr_version.filename = "__rail-bridge__/graphics/hr-rail-endings-background.png"
-rail_north.pictures.rail_endings.sheets[2].filename = "__rail-bridge__/graphics/rail-endings-metals.png"
-rail_north.pictures.rail_endings.sheets[2].hr_version.filename = "__rail-bridge__/graphics/hr-rail-endings-metals.png"
 data:extend{rail_north}
 
 -- Rail for diagonal left bridge
@@ -63,6 +88,7 @@ rail_1.collision_box = {{-0.1, -0.99}, {0.1, 0.1}}
 for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates", "metals"} do
   cut_off_bottom(rail_1.pictures.straight_rail_diagonal_right_bottom[layer], 2)
   cut_off_bottom(rail_1.pictures.straight_rail_diagonal_right_bottom[layer].hr_version, 4)
+  load_vertical_picture(rail_1.pictures.straight_rail_vertical, layer, 1)
 end
 data:extend{rail_1}
 
@@ -74,6 +100,7 @@ rail_2.collision_box = {{-0.1, -0.1}, {0.1, 0.99}}
 for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates", "metals"} do
   cut_off_bottom(rail_2.pictures.straight_rail_diagonal_left_top[layer], -30)
   cut_off_bottom(rail_2.pictures.straight_rail_diagonal_left_top[layer].hr_version, -60)
+  load_vertical_picture(rail_2.pictures.straight_rail_vertical, layer, 2)
 end
 data:extend{rail_2}
 
@@ -85,6 +112,7 @@ rail_3.collision_box = {{-0.1, -0.99}, {0.1, 0.1}}
 for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates", "metals"} do
   cut_off_bottom(rail_3.pictures.straight_rail_diagonal_left_bottom[layer], 2)
   cut_off_bottom(rail_3.pictures.straight_rail_diagonal_left_bottom[layer].hr_version, 4)
+  load_vertical_picture(rail_3.pictures.straight_rail_vertical, layer, 3)
 end
 data:extend{rail_3}
 
@@ -96,6 +124,7 @@ rail_4.collision_box = {{-0.1, -0.1}, {0.1, 0.99}}
 for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates", "metals"} do
   cut_off_bottom(rail_4.pictures.straight_rail_diagonal_right_top[layer], -30)
   cut_off_bottom(rail_4.pictures.straight_rail_diagonal_right_top[layer].hr_version, -60)
+  load_vertical_picture(rail_4.pictures.straight_rail_vertical, layer, 4)
 end
 data:extend{rail_4}
 
@@ -115,6 +144,7 @@ local bridge = {
   max_health = 300,
   resistances = table.deepcopy(rail_east.resistances),
   corpse = "straight-rail-remnants",
+  map_color = table.deepcopy(data.raw["utility-constants"]["default"].chart.rail_color),
   render_layer = "lower-object",
   picture = {layers = {}},
 }
@@ -128,7 +158,7 @@ table.insert(bridge.picture.layers, {
   height = 32,
   shift = util.by_pixel(0, 34),
   hr_version = {
-    filename = "__rail-bridge__/graphics/hr-bridge.png",
+    filename = "__rail-bridge__/graphics/hr_bridge.png",
     width = 144,
     height = 64,
     shift = util.by_pixel(0, 34),
@@ -141,109 +171,106 @@ for _, layer in pairs{"backplates", "metals"} do
 end
 data:extend{bridge}
 
--- Test turret
-
+-- Fake crafting category so we can use assembling-machine as a base entity
+data:extend{
+  {
+    type = "recipe-category",
+    name = "rail-bridge-category",
+  }
+}
 
 -- Diagonal left bridge entity
-local diag_left = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"]);
-diag_left.name = "rail-bridge-diagonal-left"
-diag_left.icon = "__rail-bridge__/graphics/icon.png"
-diag_left.icon_size = 32
-diag_left.subgroup = "transport"
-diag_left.order = "a[train-system]-a[rail]-b[diagonal-bridge]"
-diag_left.flags = {"placeable-neutral", "player-creation", "hide-alt-info"}
-diag_left.fast_replaceable_group = nil
-diag_left.collision_mask = {"item-layer", "object-layer", "water-tile"}
-diag_left.collision_box = {{-0.55, -1.55}, {0.55, 1.55}}
-diag_left.selection_box = {{-1, -2}, {1, 2}}
-diag_left.minable = { mining_time = 0.5, result = "rail-bridge-diagonal-left" }
-diag_left.max_health = 300
-diag_left.corpse = "straight-rail-remnants"
-diag_left.item_slot_count = 0
-diag_left.circuit_wire_max_distance = 0
-diag_left.activity_led_light_offsets = {{0,0}, {0,0}, {0,0}, {0,0}}
-diag_left.activity_led_sprites = {}
+local diag_left = {
+  type = "assembling-machine",
+  name = "rail-bridge-diagonal-left",
+  icon = "__rail-bridge__/graphics/icon.png",
+  icon_size = 32,
+  subgroup = "transport",
+  order = "a[train-system]-a[rail]-b[bridge]",
+  flags = {"placeable-neutral", "player-creation", "hide-alt-info"},
+  collision_mask = {"item-layer", "object-layer", "water-tile"},
+  collision_box = {{-0.55, -1.55}, {0.55, 1.55}},
+  selection_box = {{-1, -2}, {1, 2}},
+  minable = {mining_time = 0.5, result = "rail-bridge-diagonal-left"},
+  max_health = 300,
+  resistances = table.deepcopy(rail_east.resistances),
+  corpse = "straight-rail-remnants",
+  map_color = table.deepcopy(data.raw["utility-constants"]["default"].chart.rail_color),
+  crafting_categories = {"rail-bridge-category"},
+  crafting_speed = 1,
+  energy_usage = "0.0000001W",
+  energy_source = {type = "void"},
+  off_when_no_fluid_recipe = false,
+  fluid_boxes = {{
+    base_area = 10,
+    base_level = -1,
+    production_type = "output",
+    pipe_connections = {{type = "output", position = {0, -2}}},
+    pipe_picture = {},
+    render_layer = "item",
+  }},
+}
+local pipe_picture = diag_left.fluid_boxes[1].pipe_picture
 for _, direction in pairs{"north", "east", "south", "west"} do
-  diag_left.sprites[direction] = {layers = {}}
-  diag_left.activity_led_sprites[direction] = {
-    filename = "__core__/graphics/empty.png",
-    width = 1,
-    height = 1,
-  }
+  pipe_picture[direction] = {layers = {}}
 end
-for _, layer in pairs{"stone_path_background", "stone_path", "ties"} do
+-- Add crossing rail graphics
+for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates", "metals"} do
   for _, direction in pairs{"north", "south"} do
-    table.insert(diag_left.asprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_vertical[layer], {0, -1}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_2.pictures.straight_rail_vertical[layer], {0, 1}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_diagonal_left_bottom[layer], {0, -1}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_diagonal_right_top[layer], {0, 1}))
+    local offset = -2
+    if direction == "north" then offset = 2 end
+    table.insert(pipe_picture[direction].layers, trim_4_to_2_tile_width(copy_and_shift(rail_1.pictures.straight_rail_vertical[layer], {0, -1 + offset})))
+    table.insert(pipe_picture[direction].layers, trim_4_to_2_tile_width(copy_and_shift(rail_2.pictures.straight_rail_vertical[layer], {0, 1 + offset})))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_diagonal_left_bottom[layer], {0, -1 + offset}))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_2.pictures.straight_rail_diagonal_right_top[layer], {0, 1 + offset}))
   end
   for _, direction in pairs{"east", "west"} do
-    table.insert(diag_left.activity_led_sprites[direction].layers, {
-      filename = "__rail-bridge__/graphics/constant-combinator-LED-E.png",
-      height = 8,
-      width = 8,
-      frame_count = 1,
-      shift = {0, 0},
-      hr_version = {
-        filename = "__rail-bridge__/graphics/hr-constant-combinator-LED-E.png",
-        width = 14,
-        height = 14,
-        frame_count = 1,
-        shift = {0, 0},
-        scale = 0.5,
-      },
-    })
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_diagonal_right_bottom[layer], {-1, 0}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_2.pictures.straight_rail_diagonal_left_top[layer], {1, 0}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_horizontal[layer], {-1, 0}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_horizontal[layer], {1, 0}))
+    local offset = 2
+    if direction == "east" then offset = -2 end
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_diagonal_right_bottom[layer], {-1 + offset, 0}))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_2.pictures.straight_rail_diagonal_left_top[layer], {1 + offset, 0}))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_horizontal[layer], {-1 + offset, 0}))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_2.pictures.straight_rail_horizontal[layer], {1 + offset, 0}))
   end
 end
-for _, direction in pairs{"north", "east", "south", "west"} do
-  if direction == "north" or direction == "south" then
-    table.insert(diag_left.sprites[direction].layers, {
-      filename = "__rail-bridge__/graphics/bridge.png",
-      width = 72,
-      height = 32,
-      shift = util.by_pixel(0, 34),
-      hr_version = {
-        filename = "__rail-bridge__/graphics/hr-bridge.png",
-        width = 144,
-        height = 64,
-        shift = util.by_pixel(0, 34),
-        scale = 0.5,
-      }
-    })
-  else
-    table.insert(diag_left.sprites[direction].layers, {
-      filename = "__rail-bridge__/graphics/bridge-sw.png",
-      width = 72,
-      height = 32,
-      shift = util.by_pixel(-32, 34),
-      hr_version = {
-        filename = "__rail-bridge__/graphics/hr-bridge-sw.png",
-        width = 144,
-        height = 64,
-        shift = util.by_pixel(-32, 34),
-        scale = 0.5,
-      }
-    })
-  end
+-- Add bridge graphics
+for _, direction in pairs{"north", "south"} do
+  local offset = -2
+  if direction == "north" then offset = 2 end
+  table.insert(pipe_picture[direction].layers, {
+    filename = "__rail-bridge__/graphics/bridge_ne.png",
+    width = 72,
+    height = 72,
+    direction_count = 1,
+    shift = {0, 1.4375 + offset},
+    hr_version = {
+      filename = "__rail-bridge__/graphics/hr_bridge_ne.png",
+      width = 144,
+      height = 144,
+      direction_count = 1,
+      shift = {0, 1.4375 + offset},
+      scale = 0.5,
+    }
+  })
 end
-for _, layer in pairs{"backplates", "metals"} do
-  for _, direction in pairs{"north", "south"} do
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_vertical[layer], {0, -1}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_2.pictures.straight_rail_vertical[layer], {0, 1}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_diagonal_left_bottom[layer], {0, -1}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_diagonal_right_top[layer], {0, 1}))
-  end
-  for _, direction in pairs{"east", "west"} do
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_diagonal_right_bottom[layer], {-1, 0}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_2.pictures.straight_rail_diagonal_left_top[layer], {1, 0}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_horizontal[layer], {-1, 0}))
-    table.insert(diag_left.sprites[direction].layers, copy_and_shift(rail_1.pictures.straight_rail_horizontal[layer], {1, 0}))
-  end
+for _, direction in pairs{"east", "west"} do
+  local offset = 2
+  if direction == "east" then offset = -2 end
+  table.insert(pipe_picture[direction].layers, {
+    filename = "__rail-bridge__/graphics/bridge_sw.png",
+    width = 72,
+    height = 32,
+    direction_count = 1,
+    shift = {-1 + offset, 1.0625},
+    hr_version = {
+      filename = "__rail-bridge__/graphics/hr_bridge_sw.png",
+      width = 144,
+      height = 64,
+      direction_count = 1,
+      shift = {-1 + offset, 1.0625},
+      scale = 0.5,
+    }
+  })
 end
 data:extend{diag_left}
 
@@ -252,67 +279,67 @@ local diag_right = table.deepcopy(diag_left)
 diag_right.name = "rail-bridge-diagonal-right"
 diag_right.icon = "__rail-bridge__/graphics/icon.png"
 diag_right.minable.result = "rail-bridge-diagonal-right"
+pipe_picture = diag_right.fluid_boxes[1].pipe_picture
 for _, direction in pairs{"north", "east", "south", "west"} do
-  diag_right.sprites[direction] = {layers = {}}
+  pipe_picture[direction] = {layers = {}}
 end
-for _, layer in pairs{"stone_path_background", "stone_path", "ties"} do
+-- Add crossing rail graphics
+for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates", "metals"} do
   for _, direction in pairs{"north", "south"} do
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_vertical[layer], {0, -1}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_4.pictures.straight_rail_vertical[layer], {0, 1}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_diagonal_right_bottom[layer], {0, -1}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_diagonal_left_top[layer], {0, 1}))
+    local offset = -2
+    if direction == "north" then offset = 2 end
+    table.insert(pipe_picture[direction].layers, trim_4_to_2_tile_width(copy_and_shift(rail_3.pictures.straight_rail_vertical[layer], {0, -1 + offset})))
+    table.insert(pipe_picture[direction].layers, trim_4_to_2_tile_width(copy_and_shift(rail_4.pictures.straight_rail_vertical[layer], {0, 1 + offset})))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_diagonal_right_bottom[layer], {0, -1 + offset}))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_4.pictures.straight_rail_diagonal_left_top[layer], {0, 1 + offset}))
   end
   for _, direction in pairs{"east", "west"} do
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_4.pictures.straight_rail_diagonal_right_top[layer], {-1, 0}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_diagonal_left_bottom[layer], {1, 0}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_horizontal[layer], {-1, 0}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_horizontal[layer], {1, 0}))
+    local offset = 2
+    if direction == "east" then offset = -2 end
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_4.pictures.straight_rail_diagonal_right_top[layer], {-1 + offset, 0}))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_diagonal_left_bottom[layer], {1 + offset, 0}))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_horizontal[layer], {-1 + offset, 0}))
+    table.insert(pipe_picture[direction].layers, copy_and_shift(rail_4.pictures.straight_rail_horizontal[layer], {1 + offset, 0}))
   end
 end
-for _, direction in pairs{"north", "east", "south", "west"} do
-  if direction == "north" or direction == "south" then
-    table.insert(diag_right.sprites[direction].layers, {
-      filename = "__rail-bridge__/graphics/bridge.png",
-      width = 72,
-      height = 32,
-      shift = util.by_pixel(0, 34),
-      hr_version = {
-        filename = "__rail-bridge__/graphics/hr-bridge.png",
-        width = 144,
-        height = 64,
-        shift = util.by_pixel(0, 34),
-        scale = 0.5,
-      }
-    })
-  else
-    table.insert(diag_right.sprites[direction].layers, {
-      filename = "__rail-bridge__/graphics/bridge-se.png",
-      width = 72,
-      height = 32,
-      shift = util.by_pixel(32, 34),
-      hr_version = {
-        filename = "__rail-bridge__/graphics/hr-bridge-se.png",
-        width = 144,
-        height = 64,
-        shift = util.by_pixel(32, 34),
-        scale = 0.5,
-      }
-    })
-  end
+-- Add bridge graphics
+for _, direction in pairs{"north", "south"} do
+  local offset = -2
+  if direction == "north" then offset = 2 end
+  table.insert(pipe_picture[direction].layers, {
+    filename = "__rail-bridge__/graphics/bridge_nw.png",
+    width = 72,
+    height = 72,
+    direction_count = 1,
+    shift = {0, 1.4375 + offset},
+    hr_version = {
+      filename = "__rail-bridge__/graphics/hr_bridge_nw.png",
+      width = 144,
+      height = 144,
+      direction_count = 1,
+      shift = {0, 1.4375 + offset},
+      scale = 0.5,
+    }
+  })
 end
-for _, layer in pairs{"backplates", "metals"} do
-  for _, direction in pairs{"north", "south"} do
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_vertical[layer], {0, -1}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_4.pictures.straight_rail_vertical[layer], {0, 1}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_diagonal_right_bottom[layer], {0, -1}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_diagonal_left_top[layer], {0, 1}))
-  end
-  for _, direction in pairs{"east", "west"} do
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_4.pictures.straight_rail_diagonal_right_top[layer], {-1, 0}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_diagonal_left_bottom[layer], {1, 0}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_horizontal[layer], {-1, 0}))
-    table.insert(diag_right.sprites[direction].layers, copy_and_shift(rail_3.pictures.straight_rail_horizontal[layer], {1, 0}))
-  end
+for _, direction in pairs{"east", "west"} do
+  local offset = 2
+  if direction == "east" then offset = -2 end
+  table.insert(pipe_picture[direction].layers, {
+    filename = "__rail-bridge__/graphics/bridge_se.png",
+    width = 72,
+    height = 32,
+    direction_count = 1,
+    shift = {1 + offset, 1.0625},
+    hr_version = {
+      filename = "__rail-bridge__/graphics/hr_bridge_se.png",
+      width = 144,
+      height = 64,
+      direction_count = 1,
+      shift = {1 + offset, 1.0625},
+      scale = 0.5,
+    }
+  })
 end
 data:extend{diag_right};
 
@@ -323,8 +350,8 @@ data:extend {
     name = bridge.name,
     place_result = bridge.name,
     icon = bridge.icon,
-    subgroup = bridge.subgroup,
     icon_size = bridge.icon_size,
+    subgroup = bridge.subgroup,
     order = bridge.order,
     flags = {},
     stack_size = 10,
@@ -334,8 +361,8 @@ data:extend {
     name = diag_left.name,
     place_result = diag_left.name,
     icon = diag_left.icon,
-    subgroup = diag_left.subgroup,
     icon_size = diag_left.icon_size,
+    subgroup = diag_left.subgroup,
     order = diag_left.order,
     flags = {},
     stack_size = 10,
@@ -345,8 +372,8 @@ data:extend {
     name = diag_right.name,
     place_result = diag_right.name,
     icon = diag_right.icon,
-    subgroup = diag_right.subgroup,
     icon_size = diag_right.icon_size,
+    subgroup = diag_right.subgroup,
     order = diag_right.order,
     flags = {},
     stack_size = 10,
