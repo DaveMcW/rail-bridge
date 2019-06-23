@@ -1,10 +1,11 @@
 A mod for [Factorio](https://www.factorio.com) that adds rail bridges.
 
+---
 ### Features:
 
 Rail bridges allow rail crossings without signals.
 
-5 bridge rotations to handle all straight rail crossings.
+3 bridge types for straight and diagonal crossings.
 
 Research Logistics 3 to unlock rail bridges.
 

@@ -1,0 +1,13 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.0.2
+Date: 2019-06-23
+  Features:
+    - Diagonal bridges.
+  Bugfixes:
+    - Fixed recipe appearing too early.
+---------------------------------------------------------------------------------------------------
+Version: 0.0.1
+Date: 2019-06-16
+  Features:
+    - Rail bridges allow rail crossings without signals.
+    - Research Logistics 3 to unlock rail bridges.
