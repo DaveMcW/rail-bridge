@@ -183,7 +183,7 @@ data:extend{
 local diag_left = {
   type = "assembling-machine",
   name = "rail-bridge-diagonal-left",
-  icon = "__rail-bridge__/graphics/icon.png",
+  icon = "__rail-bridge__/graphics/icon-left.png",
   icon_size = 32,
   subgroup = "transport",
   order = "a[train-system]-a[rail]-b[bridge]",
@@ -277,7 +277,7 @@ data:extend{diag_left}
 -- Diagonal right bridge entity
 local diag_right = table.deepcopy(diag_left)
 diag_right.name = "rail-bridge-diagonal-right"
-diag_right.icon = "__rail-bridge__/graphics/icon.png"
+diag_right.icon = "__rail-bridge__/graphics/icon-right.png"
 diag_right.minable.result = "rail-bridge-diagonal-right"
 pipe_picture = diag_right.fluid_boxes[1].pipe_picture
 for _, direction in pairs{"north", "east", "south", "west"} do
