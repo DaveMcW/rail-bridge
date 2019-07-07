@@ -1,8 +1,10 @@
 local MY_BRIDGES = {
-  ["rail-bridge-test"] = true,
   ["rail-bridge"] = true,
   ["rail-bridge-diagonal-left"] = true,
   ["rail-bridge-diagonal-right"] = true,
+  ["rail-bridge-preview"] = true,
+  ["rail-bridge-diagonal-left-preview"] = true,
+  ["rail-bridge-diagonal-right-preview"] = true,
 }
 local MY_RAILS = {
   ["rail-bridge-north"] = true,
@@ -24,15 +26,36 @@ function on_init()
   end
 end
 
+function on_configuration_changed(event)
+  on_init()
+  local changes = event.mod_changes["rail-bridge"]
+  if not changes then return end
+
+  -- Move bridge sprite to the rendering system
+  if changes.old_version < "0.0.3" and changes.new_version >= "0.0.3" then
+    for _, surface in pairs(game.surfaces) do
+      for _, bridge in pairs(surface.find_entities_filtered{name = {
+        "rail-bridge-diagonal-left",
+        "rail-bridge-diagonal-right",
+      }}) do
+        add_sprite(bridge)
+      end
+    end
+  end
+end
+
 function on_built(event)
-  local entity = event.created_entity or event.entity
+  local entity = event.created_entity or event.entity or event.destination
   if not entity or not entity.valid then return end
   if not MY_BRIDGES[entity.name] then return end
 
   -- Align to rail grid
   local mod_x = 0
   local mod_y = 0
-  if entity.name == "rail-bridge-diagonal-left" or entity.name == "rail-bridge-diagonal-right" then
+  if entity.name == "rail-bridge-diagonal-left"
+  or entity.name == "rail-bridge-diagonal-left-preview"
+  or entity.name == "rail-bridge-diagonal-right"
+  or entity.name == "rail-bridge-diagonal-right-preview" then
     if entity.direction % 4 == defines.direction.north then
       mod_x = 0
       mod_y = 1
@@ -56,7 +79,6 @@ function on_built(event)
     area = area_under(entity),
   }) do
     if obstacle.type == "straight-rail"
-    and not MY_RAILS[obstacle.name]
     and obstacle.force == entity.force
     and obstacle.can_be_destroyed() then
       table.insert(delete_rails, obstacle)
@@ -72,10 +94,36 @@ function on_built(event)
 
   -- Destroy rails in the area
   for _, rail in pairs(delete_rails) do
-    if not MY_RAILS[rail.name] then
+    if entity.name == "rail-bridge" and MY_RAILS[rail] and rail.direction % 2 == 1 then
+      -- Straight bridge can't remove diagonal rails
+    else
       refund_entity(rail, event)
     end
   end
+
+  -- Replace preview
+  if entity.name == "rail-bridge-preview"
+  or entity.name == "rail-bridge-diagonal-left-preview"
+  or entity.name == "rail-bridge-diagonal-right-preview" then
+    local surface = entity.surface
+    local data = {
+      name = entity.name:sub(1, -9),
+      position = entity.position,
+      direction = entity.direction,
+      force = entity.force,
+      create_build_effect_smoke = false,
+    }
+    entity.destroy()
+    entity = surface.create_entity(data)
+  end
+
+  -- Turn off constant combinator
+  if entity.type == "constant-combinator" then
+    entity.get_or_create_control_behavior().enabled = false
+  end
+
+  -- Create bridge sprite
+  add_sprite(entity)
 
   -- Create crossing rails
   if entity.name == "rail-bridge" then
@@ -104,9 +152,21 @@ function on_built(event)
     else
       create_rail("rail-bridge-rail-4", entity, defines.direction.east, {-1, 0})
       create_rail("rail-bridge-rail-3", entity, defines.direction.east, {1, 0})
-      create_rail("rail-bridge-rail-3", entity, defines.direction.northeast, {-1, 0})
-      create_rail("rail-bridge-rail-4", entity, defines.direction.southwest, {1, 0})
+      create_rail("rail-bridge-rail-4", entity, defines.direction.northeast, {-1, 0})
+      create_rail("rail-bridge-rail-3", entity, defines.direction.southwest, {1, 0})
     end
+  end
+end
+
+function on_entity_cloned(event)
+  local entity = event.destination
+  if not entity or not entity.valid then return end
+  if MY_BRIDGES[entity.name] then
+    -- Continue in on_built
+    on_built({entity=entity, name=event.name})
+  elseif MY_RAILS[entity.name] then
+    -- Don't let other mods clone our custom rails
+    entity.destroy()
   end
 end
 
@@ -122,7 +182,11 @@ function on_destroyed(event)
     force = entity.force,
   }) do
     if MY_RAILS[rail.name] then
-      rail.destroy()
+      if entity.name == "rail-bridge" and rail.direction % 2 == 1 then
+        -- Straight bridge can't remove diagonal rails
+      else
+        rail.destroy()
+      end
     end
   end
 end
@@ -136,18 +200,63 @@ function on_gui_opened(event)
   end
 end
 
+function on_player_pipette(event)
+  -- Replace fake preview item with a real item
+  if event.item.name == "rail-bridge-preview"
+  or event.item.name == "rail-bridge-diagonal-left-preview"
+  or event.item.name == "rail-bridge-diagonal-right-preview" then
+    local player = game.players[event.player_index]
+    local item = game.item_prototypes[event.item.name:sub(1, -9)]
+    local cursor_stack = player.cursor_stack.valid_for_read and player.cursor_stack
+    if cursor_stack then
+      if cursor_stack.name == event.item.name then
+        set_cursor(player, item)
+      end
+    elseif player.cursor_ghost and player.cursor_ghost.name == event.item.name then
+      set_cursor(player, item)
+    end
+  end
+end
+
+function on_blueprint_created(event)
+  -- Get the blueprint
+  local player = game.players[event.player_index]
+  local blueprint = player.cursor_stack
+  if not blueprint.valid_for_read then return end
+  if blueprint.is_blueprint_book then
+    local inventory = blueprint.get_inventory(defines.inventory.item_main)
+    blueprint = inventory[blueprint.active_index]
+  end
+  if not blueprint.is_blueprint then return end
+  if not blueprint.is_blueprint_setup() then return end
+
+  -- Add preview items to the blueprint
+  local entities = blueprint.get_blueprint_entities()
+  for _, entity in pairs(entities) do
+    if entity.name == "rail-bridge"
+    or entity.name == "rail-bridge-diagonal-left"
+    or entity.name == "rail-bridge-diagonal-right" then
+      entity.name = entity.name .. "-preview"
+    end
+  end
+  blueprint.set_blueprint_entities(entities)
+end
+
 function create_rail(name, bridge, direction, position)
+  -- Create one of our custom rails
   if not position then position = {0, 0} end
   local rail = bridge.surface.create_entity{
     name = name,
     direction = direction,
     force = bridge.force,
     position = {bridge.position.x + position[1], bridge.position.y + position[2]},
+    create_build_effect_smoke = false,
   }
   if rail then rail.destructible = false end
 end
 
 function area_under(entity)
+  -- Calculate the absolute position of the entity's collision box
   local p = entity.position
   local box = entity.prototype.collision_box
   local dx = (box.right_bottom.x - box.left_top.x) / 2
@@ -211,15 +320,59 @@ function refund_entity(entity, build_event, colliding_entity)
   entity.destroy{raise_destroy = true}
 end
 
+function add_sprite(bridge)
+  local sprite = nil
+  if bridge.name == "rail-bridge-diagonal-left" then
+    if bridge.direction % 4 == defines.direction.north then
+      sprite = "rail-bridge-ne"
+    else
+      sprite = "rail-bridge-sw"
+    end
+  elseif bridge.name == "rail-bridge-diagonal-right" then
+    if bridge.direction % 4 == defines.direction.north then
+      sprite = "rail-bridge-nw"
+    else
+      sprite = "rail-bridge-se"
+    end
+  end
+  if sprite then
+    rendering.draw_sprite{
+      sprite = sprite,
+      surface = bridge.surface,
+      target = bridge,
+      render_layer = "lower-object-above-shadow",
+    }
+  end
+end
+
+function set_cursor(player, item)
+  local count = math.min(player.get_main_inventory().get_item_count(item.name), item.stack_size)
+  if count > 0 then
+    -- Use existing items
+    player.remove_item{name = item.name, count = count}
+    player.cursor_stack.set_stack{name = item.name, count = count}
+  elseif player.cheat_mode then
+    -- Cheat for some items
+    player.cursor_stack.set_stack{name = item.name, count = item.stack_size}
+  else
+    -- Use an item ghost
+    player.cursor_stack.clear()
+    player.cursor_ghost = item
+  end
+end
+
 script.on_init(on_init)
-script.on_configuration_changed(on_init)
+script.on_configuration_changed(on_configuration_changed)
 script.on_event(defines.events.on_built_entity, on_built)
 script.on_event(defines.events.on_robot_built_entity, on_built)
-script.on_event(defines.events.on_entity_cloned, on_built)
 script.on_event(defines.events.script_raised_built, on_built)
 script.on_event(defines.events.script_raised_revive, on_built)
+script.on_event(defines.events.on_entity_cloned, on_entity_cloned)
 script.on_event(defines.events.on_player_mined_entity, on_destroyed)
 script.on_event(defines.events.on_robot_mined_entity, on_destroyed)
 script.on_event(defines.events.on_entity_died, on_destroyed)
 script.on_event(defines.events.script_raised_destroy, on_destroyed)
 script.on_event(defines.events.on_gui_opened, on_gui_opened)
+script.on_event(defines.events.on_player_pipette, on_player_pipette)
+script.on_event(defines.events.on_player_setup_blueprint, on_blueprint_created)
+script.on_event(defines.events.on_player_configured_blueprint, on_blueprint_created)
