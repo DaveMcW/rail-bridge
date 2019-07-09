@@ -191,7 +191,7 @@ local diag_left = {
     production_type = "output",
     pipe_connections = {{type = "output", position = {0, -2}}},
     pipe_picture = {},
-    render_layer = "resource",
+    render_layer = "building-smoke",
   }},
 }
 local pipe_picture = diag_left.fluid_boxes[1].pipe_picture
