@@ -2,9 +2,8 @@ local MY_BRIDGES = {
   ["rail-bridge"] = true,
   ["rail-bridge-diagonal-left"] = true,
   ["rail-bridge-diagonal-right"] = true,
-  ["rail-bridge-preview"] = true,
-  ["rail-bridge-diagonal-left-preview"] = true,
-  ["rail-bridge-diagonal-right-preview"] = true,
+--  ["rail-bridge-diagonal-left-preview"] = true,
+--  ["rail-bridge-diagonal-right-preview"] = true,
 }
 local MY_RAILS = {
   ["rail-bridge-north"] = true,
@@ -35,10 +34,11 @@ function on_configuration_changed(event)
   if changes.old_version < "0.0.3" and changes.new_version >= "0.0.3" then
     for _, surface in pairs(game.surfaces) do
       for _, bridge in pairs(surface.find_entities_filtered{name = {
+        "rail-bridge",
         "rail-bridge-diagonal-left",
         "rail-bridge-diagonal-right",
       }}) do
-        add_sprite(bridge)
+        draw_sprite(bridge)
       end
     end
   end
@@ -123,7 +123,7 @@ function on_built(event)
   end
 
   -- Create bridge sprite
-  add_sprite(entity)
+  draw_sprite(entity)
 
   -- Create crossing rails
   if entity.name == "rail-bridge" then
@@ -200,47 +200,46 @@ function on_gui_opened(event)
   end
 end
 
-function on_player_pipette(event)
-  -- Replace fake preview item with a real item
-  if event.item.name == "rail-bridge-preview"
-  or event.item.name == "rail-bridge-diagonal-left-preview"
-  or event.item.name == "rail-bridge-diagonal-right-preview" then
-    local player = game.players[event.player_index]
-    local item = game.item_prototypes[event.item.name:sub(1, -9)]
-    local cursor_stack = player.cursor_stack.valid_for_read and player.cursor_stack
-    if cursor_stack then
-      if cursor_stack.name == event.item.name then
-        set_cursor(player, item)
-      end
-    elseif player.cursor_ghost and player.cursor_ghost.name == event.item.name then
-      set_cursor(player, item)
-    end
-  end
-end
+-- function on_player_pipette(event)
+--   -- Replace fake preview item with a real item
+--   if event.item.name == "rail-bridge-preview"
+--   or event.item.name == "rail-bridge-diagonal-left-preview"
+--   or event.item.name == "rail-bridge-diagonal-right-preview" then
+--     local player = game.players[event.player_index]
+--     local item = game.item_prototypes[event.item.name:sub(1, -9)]
+--     local cursor_stack = player.cursor_stack.valid_for_read and player.cursor_stack
+--     if cursor_stack then
+--       if cursor_stack.name == event.item.name then
+--         set_cursor(player, item)
+--       end
+--     elseif player.cursor_ghost and player.cursor_ghost.name == event.item.name then
+--       set_cursor(player, item)
+--     end
+--   end
+-- end
 
-function on_blueprint_created(event)
-  -- Get the blueprint
-  local player = game.players[event.player_index]
-  local blueprint = player.cursor_stack
-  if not blueprint.valid_for_read then return end
-  if blueprint.is_blueprint_book then
-    local inventory = blueprint.get_inventory(defines.inventory.item_main)
-    blueprint = inventory[blueprint.active_index]
-  end
-  if not blueprint.is_blueprint then return end
-  if not blueprint.is_blueprint_setup() then return end
-
-  -- Add preview items to the blueprint
-  local entities = blueprint.get_blueprint_entities()
-  for _, entity in pairs(entities) do
-    if entity.name == "rail-bridge"
-    or entity.name == "rail-bridge-diagonal-left"
-    or entity.name == "rail-bridge-diagonal-right" then
-      entity.name = entity.name .. "-preview"
-    end
-  end
-  blueprint.set_blueprint_entities(entities)
-end
+-- function on_blueprint_created(event)
+--   -- Get the blueprint
+--   local player = game.players[event.player_index]
+--   local blueprint = player.cursor_stack
+--   if not blueprint.valid_for_read then return end
+--   if blueprint.is_blueprint_book then
+--     local inventory = blueprint.get_inventory(defines.inventory.item_main)
+--     blueprint = inventory[blueprint.active_index]
+--   end
+--   if not blueprint.is_blueprint then return end
+--   if not blueprint.is_blueprint_setup() then return end
+--
+--   -- Add preview items to the blueprint
+--   local entities = blueprint.get_blueprint_entities()
+--   for _, entity in pairs(entities) do
+--     if entity.name == "rail-bridge-diagonal-left"
+--     or entity.name == "rail-bridge-diagonal-right" then
+--       entity.name = entity.name .. "-preview"
+--     end
+--   end
+--   blueprint.set_blueprint_entities(entities)
+-- end
 
 function create_rail(name, bridge, direction, position)
   -- Create one of our custom rails
@@ -320,9 +319,12 @@ function refund_entity(entity, build_event, colliding_entity)
   entity.destroy{raise_destroy = true}
 end
 
-function add_sprite(bridge)
+function draw_sprite(bridge)
+  -- Get sprite name
   local sprite = nil
-  if bridge.name == "rail-bridge-diagonal-left" then
+  if bridge.name == "rail-bridge" then
+    sprite = "rail-bridge"
+  elseif bridge.name == "rail-bridge-diagonal-left" then
     if bridge.direction % 4 == defines.direction.north then
       sprite = "rail-bridge-ne"
     else
@@ -335,12 +337,14 @@ function add_sprite(bridge)
       sprite = "rail-bridge-se"
     end
   end
+
+  -- Draw sprite
   if sprite then
     rendering.draw_sprite{
       sprite = sprite,
       surface = bridge.surface,
       target = bridge,
-      render_layer = "lower-object-above-shadow",
+      render_layer = "transport-belt",
     }
   end
 end
@@ -373,6 +377,6 @@ script.on_event(defines.events.on_robot_mined_entity, on_destroyed)
 script.on_event(defines.events.on_entity_died, on_destroyed)
 script.on_event(defines.events.script_raised_destroy, on_destroyed)
 script.on_event(defines.events.on_gui_opened, on_gui_opened)
-script.on_event(defines.events.on_player_pipette, on_player_pipette)
-script.on_event(defines.events.on_player_setup_blueprint, on_blueprint_created)
-script.on_event(defines.events.on_player_configured_blueprint, on_blueprint_created)
+--script.on_event(defines.events.on_player_pipette, on_player_pipette)
+--script.on_event(defines.events.on_player_setup_blueprint, on_blueprint_created)
+--script.on_event(defines.events.on_player_configured_blueprint, on_blueprint_created)
