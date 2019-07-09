@@ -2,8 +2,6 @@ local MY_BRIDGES = {
   ["rail-bridge"] = true,
   ["rail-bridge-diagonal-left"] = true,
   ["rail-bridge-diagonal-right"] = true,
---  ["rail-bridge-diagonal-left-preview"] = true,
---  ["rail-bridge-diagonal-right-preview"] = true,
 }
 local MY_RAILS = {
   ["rail-bridge-north"] = true,
@@ -53,9 +51,7 @@ function on_built(event)
   local mod_x = 0
   local mod_y = 0
   if entity.name == "rail-bridge-diagonal-left"
-  or entity.name == "rail-bridge-diagonal-left-preview"
-  or entity.name == "rail-bridge-diagonal-right"
-  or entity.name == "rail-bridge-diagonal-right-preview" then
+  or entity.name == "rail-bridge-diagonal-right" then
     if entity.direction % 4 == defines.direction.north then
       mod_x = 0
       mod_y = 1
@@ -99,22 +95,6 @@ function on_built(event)
     else
       refund_entity(rail, event)
     end
-  end
-
-  -- Replace preview
-  if entity.name == "rail-bridge-preview"
-  or entity.name == "rail-bridge-diagonal-left-preview"
-  or entity.name == "rail-bridge-diagonal-right-preview" then
-    local surface = entity.surface
-    local data = {
-      name = entity.name:sub(1, -9),
-      position = entity.position,
-      direction = entity.direction,
-      force = entity.force,
-      create_build_effect_smoke = false,
-    }
-    entity.destroy()
-    entity = surface.create_entity(data)
   end
 
   -- Turn off constant combinator
@@ -199,47 +179,6 @@ function on_gui_opened(event)
     game.players[event.player_index].opened = nil
   end
 end
-
--- function on_player_pipette(event)
---   -- Replace fake preview item with a real item
---   if event.item.name == "rail-bridge-preview"
---   or event.item.name == "rail-bridge-diagonal-left-preview"
---   or event.item.name == "rail-bridge-diagonal-right-preview" then
---     local player = game.players[event.player_index]
---     local item = game.item_prototypes[event.item.name:sub(1, -9)]
---     local cursor_stack = player.cursor_stack.valid_for_read and player.cursor_stack
---     if cursor_stack then
---       if cursor_stack.name == event.item.name then
---         set_cursor(player, item)
---       end
---     elseif player.cursor_ghost and player.cursor_ghost.name == event.item.name then
---       set_cursor(player, item)
---     end
---   end
--- end
-
--- function on_blueprint_created(event)
---   -- Get the blueprint
---   local player = game.players[event.player_index]
---   local blueprint = player.cursor_stack
---   if not blueprint.valid_for_read then return end
---   if blueprint.is_blueprint_book then
---     local inventory = blueprint.get_inventory(defines.inventory.item_main)
---     blueprint = inventory[blueprint.active_index]
---   end
---   if not blueprint.is_blueprint then return end
---   if not blueprint.is_blueprint_setup() then return end
---
---   -- Add preview items to the blueprint
---   local entities = blueprint.get_blueprint_entities()
---   for _, entity in pairs(entities) do
---     if entity.name == "rail-bridge-diagonal-left"
---     or entity.name == "rail-bridge-diagonal-right" then
---       entity.name = entity.name .. "-preview"
---     end
---   end
---   blueprint.set_blueprint_entities(entities)
--- end
 
 function create_rail(name, bridge, direction, position)
   -- Create one of our custom rails
@@ -377,6 +316,3 @@ script.on_event(defines.events.on_robot_mined_entity, on_destroyed)
 script.on_event(defines.events.on_entity_died, on_destroyed)
 script.on_event(defines.events.script_raised_destroy, on_destroyed)
 script.on_event(defines.events.on_gui_opened, on_gui_opened)
---script.on_event(defines.events.on_player_pipette, on_player_pipette)
---script.on_event(defines.events.on_player_setup_blueprint, on_blueprint_created)
---script.on_event(defines.events.on_player_configured_blueprint, on_blueprint_created)
