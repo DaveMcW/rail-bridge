@@ -38,26 +38,4 @@ data:extend {
     flags = {},
     stack_size = 10,
   },
-  -- {
-  --   -- Fake item for creating blueprints
-  --   type = "item",
-  --   name = "rail-bridge-diagonal-left-preview",
-  --   localised_name = {"entity-name.rail-bridge-diagonal-left"},
-  --   place_result = "rail-bridge-diagonal-left",
-  --   icon = "__rail-bridge__/graphics/icon-left.png",
-  --   icon_size = 32,
-  --   flags = {"hidden"},
-  --   stack_size = 10,
-  -- },
-  -- {
-  --   -- Fake item for creating blueprints
-  --   type = "item",
-  --   name = "rail-bridge-diagonal-right-preview",
-  --   localised_name = {"entity-name.rail-bridge-diagonal-right"},
-  --   place_result = "rail-bridge-diagonal-right",
-  --   icon = "__rail-bridge__/graphics/icon-right.png",
-  --   icon_size = 32,
-  --   flags = {"hidden"},
-  --   stack_size = 10,
-  -- },
 }
