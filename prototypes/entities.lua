@@ -25,8 +25,6 @@ local function copy_and_shift(source, shift)
   picture.shift[2] = picture.shift[2] + shift[2]
   picture.hr_version.shift[1] = picture.hr_version.shift[1] + shift[1]
   picture.hr_version.shift[2] = picture.hr_version.shift[2] + shift[2]
-  picture.flags = {"low-object"}
-  picture.hr_version.flags = {"low-object"}
   return picture
 end
 
@@ -218,22 +216,10 @@ for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates
   end
 end
 -- Add bridge graphics
-for _, direction in pairs{"north", "south"} do
-  local offset = -2
-  if direction == "north" then offset = 2 end
-  local sprite = table.deepcopy(data.raw.sprite["rail-bridge-ne"])
-  sprite.shift[2] = sprite.shift[2] + offset
-  sprite.hr_version.shift[2] = sprite.hr_version.shift[2] + offset
-  table.insert(pipe_picture[direction].layers, sprite)
-end
-for _, direction in pairs{"east", "west"} do
-  local offset = 2
-  if direction == "east" then offset = -2 end
-  local sprite = table.deepcopy(data.raw.sprite["rail-bridge-sw"])
-  sprite.shift[1] = sprite.shift[1] + offset
-  sprite.hr_version.shift[1] = sprite.hr_version.shift[1] + offset
-  table.insert(pipe_picture[direction].layers, sprite)
-end
+table.insert(pipe_picture["north"].layers, copy_and_shift(data.raw.sprite["rail-bridge-ne"], {0, 2}))
+table.insert(pipe_picture["south"].layers, copy_and_shift(data.raw.sprite["rail-bridge-ne"], {0, -2}))
+table.insert(pipe_picture["east"].layers, copy_and_shift(data.raw.sprite["rail-bridge-sw"], {-2, 0}))
+table.insert(pipe_picture["west"].layers, copy_and_shift(data.raw.sprite["rail-bridge-sw"], {2, 0}))
 data:extend{diag_left}
 
 -- Diagonal right bridge entity
@@ -265,20 +251,8 @@ for _, layer in pairs{"stone_path_background", "stone_path", "ties", "backplates
   end
 end
 -- Add bridge graphics
-for _, direction in pairs{"north", "south"} do
-  local offset = -2
-  if direction == "north" then offset = 2 end
-  local sprite = table.deepcopy(data.raw.sprite["rail-bridge-nw"])
-  sprite.shift[2] = sprite.shift[2] + offset
-  sprite.hr_version.shift[2] = sprite.hr_version.shift[2] + offset
-  table.insert(pipe_picture[direction].layers, sprite)
-end
-for _, direction in pairs{"east", "west"} do
-  local offset = 2
-  if direction == "east" then offset = -2 end
-  local sprite = table.deepcopy(data.raw.sprite["rail-bridge-se"])
-  sprite.shift[1] = sprite.shift[1] + offset
-  sprite.hr_version.shift[1] = sprite.hr_version.shift[1] + offset
-  table.insert(pipe_picture[direction].layers, sprite)
-end
+table.insert(pipe_picture["north"].layers, copy_and_shift(data.raw.sprite["rail-bridge-nw"], {0, 2}))
+table.insert(pipe_picture["south"].layers, copy_and_shift(data.raw.sprite["rail-bridge-nw"], {0, -2}))
+table.insert(pipe_picture["east"].layers, copy_and_shift(data.raw.sprite["rail-bridge-se"], {-2, 0}))
+table.insert(pipe_picture["west"].layers, copy_and_shift(data.raw.sprite["rail-bridge-se"], {2, 0}))
 data:extend{diag_right};
