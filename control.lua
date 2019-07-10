@@ -29,7 +29,7 @@ function on_configuration_changed(event)
   if not changes then return end
 
   -- Move bridge sprite to the rendering system
-  if changes.old_version < "0.0.3" and changes.new_version >= "0.0.3" then
+  if changes.old_version < "0.0.3" then
     for _, surface in pairs(game.surfaces) do
       for _, bridge in pairs(surface.find_entities_filtered{name = {
         "rail-bridge",
@@ -95,11 +95,6 @@ function on_built(event)
     else
       refund_entity(rail, event)
     end
-  end
-
-  -- Turn off constant combinator
-  if entity.type == "constant-combinator" then
-    entity.get_or_create_control_behavior().enabled = false
   end
 
   -- Create bridge sprite
@@ -258,19 +253,19 @@ function refund_entity(entity, build_event, colliding_entity)
   entity.destroy{raise_destroy = true}
 end
 
-function draw_sprite(bridge)
+function draw_sprite(entity)
   -- Get sprite name
   local sprite = nil
-  if bridge.name == "rail-bridge" then
+  if entity.name == "rail-bridge" then
     sprite = "rail-bridge"
-  elseif bridge.name == "rail-bridge-diagonal-left" then
-    if bridge.direction % 4 == defines.direction.north then
+  elseif entity.name == "rail-bridge-diagonal-left" then
+    if entity.direction % 4 == defines.direction.north then
       sprite = "rail-bridge-ne"
     else
       sprite = "rail-bridge-sw"
     end
-  elseif bridge.name == "rail-bridge-diagonal-right" then
-    if bridge.direction % 4 == defines.direction.north then
+  elseif entity.name == "rail-bridge-diagonal-right" then
+    if entity.direction % 4 == defines.direction.north then
       sprite = "rail-bridge-nw"
     else
       sprite = "rail-bridge-se"
@@ -281,26 +276,10 @@ function draw_sprite(bridge)
   if sprite then
     rendering.draw_sprite{
       sprite = sprite,
-      surface = bridge.surface,
-      target = bridge,
+      surface = entity.surface,
+      target = entity,
       render_layer = "transport-belt",
     }
-  end
-end
-
-function set_cursor(player, item)
-  local count = math.min(player.get_main_inventory().get_item_count(item.name), item.stack_size)
-  if count > 0 then
-    -- Use existing items
-    player.remove_item{name = item.name, count = count}
-    player.cursor_stack.set_stack{name = item.name, count = count}
-  elseif player.cheat_mode then
-    -- Cheat for some items
-    player.cursor_stack.set_stack{name = item.name, count = item.stack_size}
-  else
-    -- Use an item ghost
-    player.cursor_stack.clear()
-    player.cursor_ghost = item
   end
 end
 
