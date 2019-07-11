@@ -9,7 +9,7 @@ Rail bridges allow rail crossings without signals.
 
 Research Logistics 3 to unlock rail bridges.
 
-Rail bridges cannot build on top of rails, mine the rails first.
+Bridges cannot build on top of rails, mine the rails first.
 
 ---
 ### Known issues:
