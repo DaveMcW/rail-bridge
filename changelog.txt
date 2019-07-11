@@ -4,7 +4,7 @@ Date: 2019-07-1
   Changes:
     - Now depends on base <= 0.17.55
   Bugfixes:
-    - Fixed on_configruation_changed error.
+    - Fixed on_configuration_changed error.
 ---------------------------------------------------------------------------------------------------
 Version: 0.0.3
 Date: 2019-07-10
