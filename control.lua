@@ -29,7 +29,7 @@ function on_configuration_changed(event)
   if not changes then return end
 
   -- Move bridge sprite to the rendering system
-  if changes.old_version < "0.0.3" then
+  if changes.old_version and changes.old_version < "0.0.3" then
     for _, surface in pairs(game.surfaces) do
       for _, bridge in pairs(surface.find_entities_filtered{name = {
         "rail-bridge",
@@ -43,7 +43,7 @@ function on_configuration_changed(event)
 end
 
 function on_built(event)
-  local entity = event.created_entity or event.entity or event.destination
+  local entity = event.created_entity or event.entity
   if not entity or not entity.valid then return end
   if not MY_BRIDGES[entity.name] then return end
 
