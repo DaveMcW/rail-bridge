@@ -18,4 +18,4 @@ A train going over and under a bridge at the same time will collide with itself.
 
 Trains always render on top of rail bridges.
 
-Map editor instant deconstruction does not work on rail bridges. ([72215](https://forums.factorio.com/viewtopic.php?t=72215))
+/editor instant deconstruction does not work on rail bridges. ([72215](https://forums.factorio.com/viewtopic.php?t=72215))
