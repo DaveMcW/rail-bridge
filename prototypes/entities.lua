@@ -189,7 +189,7 @@ local diag_left = {
     production_type = "output",
     pipe_connections = {{type = "output", position = {0, -2}}},
     pipe_picture = {},
-    render_layer = "building-smoke",
+    render_layer = "building-smoke",  -- 1 layer below rails
   }},
 }
 local pipe_picture = diag_left.fluid_boxes[1].pipe_picture
@@ -227,7 +227,7 @@ local diag_right = table.deepcopy(diag_left)
 diag_right.name = "rail-bridge-diagonal-right"
 diag_right.icon = "__rail-bridge__/graphics/icon-right.png"
 diag_right.minable.result = "rail-bridge-diagonal-right"
-local pipe_picture = diag_right.fluid_boxes[1].pipe_picture
+pipe_picture = diag_right.fluid_boxes[1].pipe_picture
 for _, direction in pairs{"north", "east", "south", "west"} do
   pipe_picture[direction] = {layers = {}}
 end
